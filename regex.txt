@@ -1,1 +1,1 @@
-.*SEARCH.* -> with Regular Expression Enabled
+.*<<<SEARCH>>>.* -> with Regular Expression Enabled
