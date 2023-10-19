@@ -41,7 +41,7 @@ class App:
         file.close()
 
     def download(self, url):
-        # os.system("cls")
+        os.system("cls")
 
         fileNum = self.getTotalFileSum()
         extension = url.split(".")[-1]
@@ -63,26 +63,65 @@ class App:
             )
             time.sleep(1)
 
+    def logger(self, e):
+        f = open('error-logs.txt', 'a')
+        f.write(f"[{time.strftime("%Y-%m-%d %H:%M:%S")}]: {e}\n")
+        f.close()
+
+    def getFileSizes(self):
+        totalSize = 0
+
+        try: 
+            for root, dirs, files in os.walk(self.downloadPath):
+                for file in files:
+                    path = os.path.join(root, file)
+                    totalSize += os.path.getsize(path)
+        except Exception as e:
+            self.logger(e)
+            print(f"\n>>> [Get File Size Error]: {e}")
+
+        return totalSize
+
     def optimizeLocal(self):
         count = 0
 
+        unoptimizedtotalSize = self.getFileSizes()                
+
         for root, dirs, files in os.walk(self.downloadPath):
             for file in files:
+                os.system("cls")
+
                 try:
                     path = os.path.join(root, file)
-                    source = tinify.from_file(path)
-                    source.to_file(path)
+                    img = Image.open(path)
+                    img.save(path, optimize=True, quality=50)
                     count += 1
                     print(f">>> [Optimized]: {count}/{len(files)}")
+                    time.sleep(1)
                 except tinify.Error as e:
+                    self.logger(e)
                     print(f">>> [Optimize Error]: {e}")
+
+        optimizedTotalSize = self.getFileSizes()
+
+        self.printOptimizeResults(unoptimizedtotalSize, optimizedTotalSize)
 
     def optimizeTinify(self):
         count = 0
+
+        if (self.tinifyAPIKEY == None) or (self.tinifyAPIKEY == ""):
+            m = ">>> [Tinify Error]: API KEY not found"
+            self.logger(m)
+            throw(m)
+
         tinify.key = self.tinifyAPIKEY
+
+        unoptimizedtotalSize = self.getFileSizes()                
 
         for root, dirs, files in os.walk(self.downloadPath):
             for file in files:
+                os.system("cls")
+
                 try:
                     path = os.path.join(root, file)
                     source = tinify.from_file(path)
@@ -98,7 +137,17 @@ class App:
                         time.sleep(1)
 
                 except tinify.Error as e:
+                    self.logger(e)
                     print(f"\n>>> [Optimize Error]: {e}")
+
+        optimizedTotalSize = self.getFileSizes()
+
+        self.printOptimizeResults(unoptimizedtotalSize, optimizedTotalSize)
+    
+    def printOptimizeResults(self, unoptimizedSize, optimizedSize):
+        print(f"\n\n>>> [Unoptimized Size]: {unoptimizedSize/1000000} MB")
+        print(f">>> [Optimized Size]: {optimizedSize/1000000} MB")
+        print(f">>> [Total Saved]: {(unoptimizedSize - optimizedSize)/1000000} MB")
 
     def execute(self):
         self.extractData()
@@ -106,7 +155,6 @@ class App:
 
         for url in self.urlList:
             self.download(url)
-
 
 app = App()
 
@@ -117,16 +165,19 @@ try:
             "[1] - Download \n"
             "[2] - Optimize (Local) \n"
             "[3] - Optimize (Tinify) \n"
-            "[4] - Exit \n"
+            "[4] - Exit \n\n"
             ">>> ENTER NUMBER: "
         )
         if opt == "1":
-            app.download()
+            app.execute()
         elif opt == "2":
-            app.optimize()
+            app.optimizeLocal()
         elif opt == "3":
             app.optimizeTinify()
         elif opt == "4":
             exit()
-except:
-    print(">>> Exiting...")
+except KeyboardInterrupt:
+    print("\n>>> Exiting...\n")
+except Exception as e:
+    app.logger(e)
+    print(f"\n>>> [Unexpected Error]: {e}\n")
