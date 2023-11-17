@@ -7,7 +7,7 @@ pip install pillow python-dotenv tinify
 
 or run the `dep-installer.py` file.
 
-## API Key for Tinify
+## API Key for Tinify (Optional)
 
 `.env` file
 
